@@ -7,27 +7,27 @@ const TOTAL_FRAMES = 149;
 // ─────────────────────────────────────────────────────────────────────────────
 // NERVE SCROLL VIDEO — WHERE TO PUT YOUR 149 FRAMES  ★ READ ME ★
 // ─────────────────────────────────────────────────────────────────────────────
-//  1. Create this folder in the repo:   public/frames/
-//  2. Drop your 149 stills inside, named EXACTLY:
-//       public/frames/001.jpg  …  public/frames/149.jpg
-//     (zero-padded, 001 → 149.  .png / .webp also work — .jpg is tried first)
-//  3. No code change needed — this component auto-detects the folder on load
-//     and scrubs 001→149 as the user scrolls. If the folder is empty/missing,
-//     a built-in cinematic preview render plays instead (so the page never breaks).
+//  Your frames live in:   public/frames/frame_001.jpg … frame_149.jpg
+//  (prefix "frame_", zero-padded 001 → 149. .png / .webp also detected.)
+//  The hero film at the very top of the landing page auto-detects them on
+//  load and scrubs frame_001 → frame_149 as the user scrolls. If the folder
+//  is empty/missing, a built-in cinematic preview render plays instead
+//  (so the page never breaks).
 //
 //  HOW TO MAKE THE 149 STILLS FROM A VIDEO (one command):
 //     ./scripts/extract-frames.sh my-video.mp4
 //  That script (see repo: scripts/extract-frames.sh) uses ffmpeg to pull 149
-//  evenly-spaced, 1280×720 frames into public/frames/%03d.jpg for you.
+//  evenly-spaced, 1280×720 frames into public/frames/frame_%03d.jpg.
 // ─────────────────────────────────────────────────────────────────────────────
 const FRAME_CONFIG = {
-  folder: '/frames', // ← served from `public/frames/` — put 001–149 here
+  folder: '/frames', // ← served from `public/frames/` — frame_001–149 live here
   count: TOTAL_FRAMES,
   pad: 3,
-  extensions: ['jpg', 'png', 'webp'] as const, // tried in order per frame
+  prefix: 'frame_',
+  extensions: ['jpg', 'jpeg', 'png', 'webp'] as const, // tried in order per frame
 };
 const frameUrl = (n: number, ext: string) =>
-  `${FRAME_CONFIG.folder}/${String(n).padStart(FRAME_CONFIG.pad, '0')}.${ext}`;
+  `${FRAME_CONFIG.folder}/${FRAME_CONFIG.prefix}${String(n).padStart(FRAME_CONFIG.pad, '0')}.${ext}`;
 
 // Draw an <img> fullscreen with object-fit: cover behaviour.
 function drawImageCover(
@@ -413,10 +413,10 @@ export default function ScrollSequence() {
   const sourceModeRef = useRef<'checking' | 'frames' | 'preview'>('checking');
   sourceModeRef.current = sourceMode;
 
-  // Probe `public/frames/` (served at /frames/001.jpg … /frames/149.jpg).
-  // Tries frame 1 + 75 + 149 in jpg/png/webp — if any decodes, the folder
-  // exists and we switch to real-footage mode; otherwise we stay on the
-  // built-in cinematic preview so the page never shows a black screen.
+  // Probe `public/frames/` (served at /frames/frame_001.jpg … /frames/frame_149.jpg).
+  // Tries frame 1 + 75 + 149 in jpg/jpeg/png/webp — if any decodes, the
+  // folder exists and we switch to real-footage mode; otherwise we stay on
+  // the built-in cinematic preview so the page never shows a black screen.
   useEffect(() => {
     let cancelled = false;
     const tryLoad = (n: number): Promise<HTMLImageElement | null> =>
@@ -643,14 +643,14 @@ export default function ScrollSequence() {
                     <button onClick={() => setShowFolderHelp(false)} className="rounded-lg border border-white/15 px-2 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10">Close ✕</button>
                   </div>
                   <ol className="mt-3 list-decimal space-y-1.5 pl-5">
-                    <li>Create folder <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-slate-100">public/frames/</code> in this repo.</li>
-                    <li>Drop in <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-slate-100">001.jpg → 149.jpg</code> (zero-padded, exact names). <code className="font-mono text-[11px]">.png/.webp</code> also work.</li>
+                    <li>Your frames live in <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-slate-100">public/frames/</code> in this repo.</li>
+                    <li>Named <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-slate-100">frame_001.jpg → frame_149.jpg</code> (prefix + zero-padded). <code className="font-mono text-[11px]">.jpeg/.png/.webp</code> also work.</li>
                     <li>Rebuild + redeploy — <strong className="text-white">no code change needed</strong>. Scroll will scrub your footage instead of this preview.</li>
                   </ol>
                   <div className="mt-3 rounded-xl border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-slate-300">
                     <div className="text-slate-500"># from a video file — one command:</div>
                     <div className="mt-1 text-slate-100">./scripts/extract-frames.sh my-video.mp4</div>
-                    <div className="mt-1 text-slate-500"># → writes 149 stills to public/frames/%03d.jpg</div>
+                    <div className="mt-1 text-slate-500"># → writes 149 stills to public/frames/frame_%03d.jpg</div>
                   </div>
                   <div className="mt-2 text-[11.5px] text-slate-400">Script location in code: <code className="font-mono text-slate-200">scripts/extract-frames.sh</code> • Config: <code className="font-mono text-slate-200">FRAME_CONFIG</code> at top of <code className="font-mono text-slate-200">src/components/ScrollSequence.tsx</code></div>
                 </div>

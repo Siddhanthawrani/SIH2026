@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
 # NERVE scroll-film helper — extract exactly 149 stills from any video file
-# into public/frames/001.jpg … public/frames/149.jpg
+# into public/frames/frame_001.jpg … public/frames/frame_149.jpg
 #
 # WHERE THE FRAMES GO:
-#   public/frames/001.jpg  …  public/frames/149.jpg
+#   public/frames/frame_001.jpg  …  public/frames/frame_149.jpg
 #   (this folder is served by Vite/Vercel at the URL path /frames/)
 #   The page auto-detects this folder — no code change needed after adding it.
 #
@@ -38,7 +38,7 @@ fi
 mkdir -p "$OUT_DIR"
 
 echo "→ Extracting $FRAMES evenly-spaced frames from: $INPUT"
-echo "→ Output: $OUT_DIR/001.jpg … $OUT_DIR/149.jpg (${WIDTH}px wide)"
+echo "→ Output: $OUT_DIR/frame_001.jpg … $OUT_DIR/frame_149.jpg (${WIDTH}px wide)"
 
 # fps filter: 149 frames spread evenly across the whole duration.
 # We ask ffprobe for duration, then compute fps = 149 / duration.
@@ -50,8 +50,8 @@ ffmpeg -hide_banner -loglevel error -y \
   -vf "fps=${FPS},scale=${WIDTH}:-2:flags=lanczos" \
   -frames:v "$FRAMES" \
   -q:v 3 \
-  "$OUT_DIR/%03d.jpg"
+  "$OUT_DIR/frame_%03d.jpg"
 
-COUNT=$(ls "$OUT_DIR"/[0-9][0-9][0-9].jpg 2>/dev/null | wc -l | tr -d ' ')
+COUNT=$(ls "$OUT_DIR"/frame_[0-9][0-9][0-9].jpg 2>/dev/null | wc -l | tr -d ' ')
 echo "✓ Done — $COUNT frames in $OUT_DIR/"
 echo "  Next: npm run build && redeploy. Scroll will now scrub YOUR footage."
