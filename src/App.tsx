@@ -1,19 +1,21 @@
 import Navbar from './components/Navbar';
 import Backdrop3D from './components/Backdrop3D';
 import ScrollSequence from './components/ScrollSequence';
-import { Crisis, Platform, AIEngine, Impact, Funding, Footer } from './components/Sections';
+import { Crisis, ProblemAtScale, Market, Platform, Prevented, Impact, Funding, Footer } from './components/Sections';
 
 export default function App() {
   return (
-    <div id="top" className="relative min-h-screen bg-[#040917] font-sans text-slate-100 antialiased">
+    <div id="top" className="nv-page relative min-h-screen font-sans antialiased">
       <Backdrop3D />
       <Navbar />
       <main className="relative">
         <ScrollSequence />
-        <div className="relative bg-gradient-to-b from-[#040917] via-[#050b1f]/95 to-[#040917]">
+        <div className="relative">
           <Crisis />
+          <ProblemAtScale />
+          <Market />
           <Platform />
-          <AIEngine />
+          <Prevented />
           <Impact />
           <Funding />
         </div>

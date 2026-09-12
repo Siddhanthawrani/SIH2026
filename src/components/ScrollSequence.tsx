@@ -601,16 +601,16 @@ export default function ScrollSequence() {
 
   return (
     <div ref={wrapRef} className="relative" style={{ height: '380vh' }}>
-      <div className="sticky top-0 h-screen overflow-hidden bg-[#040917]">
+      <div className="sticky top-0 h-screen overflow-hidden bg-[#0d1526]">
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#040917] via-[#040917]/70 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#040917] via-[#040917]/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#0d1526] via-[#0d1526]/60 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#0d1526] via-[#0d1526]/70 to-transparent" />
 
         <motion.div style={{ y: heroY }} className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center overflow-y-auto px-5 pt-24 pb-10 md:px-10">
           <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
             <div>
               <div className="mb-5 flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-cyan-200 backdrop-blur">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-semibold tracking-[0.16em] text-slate-200 backdrop-blur">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
@@ -623,8 +623,8 @@ export default function ScrollSequence() {
                   title="Where do the 149 frames go? Click for the guide."
                   className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10.5px] font-bold tracking-wider backdrop-blur transition ${
                     sourceMode === 'frames'
-                      ? 'border-emerald-300/40 bg-emerald-400/15 text-emerald-200 hover:bg-emerald-400/25'
-                      : 'border-amber-300/40 bg-amber-300/10 text-amber-200 hover:bg-amber-300/20'
+                      ? 'border-white/25 bg-white/10 text-slate-100 hover:bg-white/15'
+                      : 'border-white/25 bg-white/10 text-slate-200 hover:bg-white/15'
                   }`}
                 >
                   <span className={`h-1.5 w-1.5 rounded-full ${sourceMode === 'frames' ? 'bg-emerald-300' : 'bg-amber-300 animate-pulse'}`} />
@@ -637,50 +637,50 @@ export default function ScrollSequence() {
               </div>
               {/* ★ in-code guide: where to put the 001–149 folder */}
               {showFolderHelp && (
-                <div className="mb-5 max-w-xl rounded-2xl border border-cyan-300/25 bg-[#050d22]/95 p-5 text-[12.5px] leading-relaxed text-slate-300 shadow-2xl backdrop-blur-xl">
+                <div className="mb-5 max-w-xl rounded-2xl border border-white/15 bg-[#131f38]/95 p-5 text-[12.5px] leading-relaxed text-slate-300 shadow-2xl backdrop-blur-xl">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-extrabold tracking-[0.18em] text-cyan-200">WHERE TO PUT YOUR 149 FRAMES</span>
+                    <span className="text-[11px] font-extrabold tracking-[0.16em] text-slate-200">WHERE TO PUT YOUR 149 FRAMES</span>
                     <button onClick={() => setShowFolderHelp(false)} className="rounded-lg border border-white/15 px-2 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10">Close ✕</button>
                   </div>
                   <ol className="mt-3 list-decimal space-y-1.5 pl-5">
-                    <li>Create folder <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-emerald-200">public/frames/</code> in this repo.</li>
-                    <li>Drop in <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-emerald-200">001.jpg → 149.jpg</code> (zero-padded, exact names). <code className="font-mono text-[11px]">.png/.webp</code> also work.</li>
+                    <li>Create folder <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-slate-100">public/frames/</code> in this repo.</li>
+                    <li>Drop in <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-slate-100">001.jpg → 149.jpg</code> (zero-padded, exact names). <code className="font-mono text-[11px]">.png/.webp</code> also work.</li>
                     <li>Rebuild + redeploy — <strong className="text-white">no code change needed</strong>. Scroll will scrub your footage instead of this preview.</li>
                   </ol>
                   <div className="mt-3 rounded-xl border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-slate-300">
                     <div className="text-slate-500"># from a video file — one command:</div>
-                    <div className="mt-1 text-emerald-200">./scripts/extract-frames.sh my-video.mp4</div>
+                    <div className="mt-1 text-slate-100">./scripts/extract-frames.sh my-video.mp4</div>
                     <div className="mt-1 text-slate-500"># → writes 149 stills to public/frames/%03d.jpg</div>
                   </div>
-                  <div className="mt-2 text-[11.5px] text-slate-400">Script location in code: <code className="font-mono text-cyan-200">scripts/extract-frames.sh</code> • Config: <code className="font-mono text-cyan-200">FRAME_CONFIG</code> at top of <code className="font-mono text-cyan-200">src/components/ScrollSequence.tsx</code></div>
+                  <div className="mt-2 text-[11.5px] text-slate-400">Script location in code: <code className="font-mono text-slate-200">scripts/extract-frames.sh</code> • Config: <code className="font-mono text-slate-200">FRAME_CONFIG</code> at top of <code className="font-mono text-slate-200">src/components/ScrollSequence.tsx</code></div>
                 </div>
               )}
-              <h1 className="text-[42px] font-extrabold leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-[72px]">
+              <h1 className="text-[42px] font-extrabold leading-[1.0] tracking-tight text-white sm:text-6xl lg:text-[68px]">
                 NERVE
-                <span className="block bg-gradient-to-r from-cyan-300 via-emerald-300 to-amber-200 bg-clip-text text-transparent">for the North East.</span>
+                <span className="block text-slate-100">for the North East.</span>
               </h1>
               <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-slate-300 md:text-lg">
                 The AI-powered <span className="font-semibold text-white">Smart Logistics Accessibility Intelligence Platform</span> for the North Eastern Region — real-time visibility, predictive alerts &amp; optimised routing across 8 states.
               </p>
-              <div key={phase.kicker} className="mt-6 max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl">
+              <div key={phase.kicker} className="mt-6 max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur-xl">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold tracking-[0.2em]" style={{ color: phase.color }}>{phase.kicker}</span>
-                  <span className="rounded-full border border-white/15 px-2.5 py-1 text-[10px] font-semibold text-slate-300">{phase.badge}</span>
+                  <span className="text-[11px] font-bold tracking-[0.16em] text-slate-200">{phase.kicker}</span>
+                  <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-slate-300">{phase.badge}</span>
                 </div>
-                <motion.h2 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-2 text-2xl font-bold text-white md:text-[26px]">{phase.title}</motion.h2>
+                <motion.h2 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-2 text-2xl font-bold tracking-tight text-white md:text-[26px]">{phase.title}</motion.h2>
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-1.5 text-sm leading-relaxed text-slate-300">{phase.desc}</motion.p>
                 <div className="mt-4 flex h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full transition-all duration-150" style={{ width: `${(frame / TOTAL_FRAMES) * 100}%`, background: `linear-gradient(90deg, ${phase.color}, #22d3ee)` }} />
+                  <div className="h-full rounded-full bg-white transition-all duration-150" style={{ width: `${(frame / TOTAL_FRAMES) * 100}%` }} />
                 </div>
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <a href="#platform" className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-6 py-3.5 text-sm font-bold text-emerald-950 shadow-[0_0_40px_-8px_rgba(52,211,153,0.7)] transition hover:bg-emerald-300">
+                <a href="#platform" className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-[#0a1628] shadow-lg transition hover:bg-slate-100">
                   <Radio size={16} /> Explore live platform
                 </a>
-                <a href="#funding" className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/10">
-                  <ShieldCheck size={16} className="text-amber-300" /> Funding case
+                <a href="#funding" className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/10">
+                  <ShieldCheck size={16} /> Funding case
                 </a>
-                <button onClick={() => setPlaying(!playing)} className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-3.5 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20">
+                <button onClick={() => setPlaying(!playing)} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-3.5 text-sm font-semibold text-slate-100 transition hover:bg-white/10">
                   {playing ? <Pause size={16} /> : <Play size={16} />} {playing ? 'Pause film' : 'Auto-play film'}
                 </button>
               </div>
@@ -691,20 +691,20 @@ export default function ScrollSequence() {
               </div>
             </div>
             <div className="hidden lg:block">
-              <div className="rounded-2xl border border-white/10 bg-[#060f24]/80 p-5 shadow-2xl backdrop-blur-xl">
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-5 shadow-2xl backdrop-blur-xl">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[11px] font-bold tracking-[0.2em] text-slate-400">
+                  <div className="flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-slate-200">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-red-400" /> NER CONTROL TOWER — LIVE
                   </div>
-                  <Maximize2 size={14} className="text-slate-500" />
+                  <Maximize2 size={14} className="text-slate-400" />
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-3">
                   {[
-                    { icon: CloudRain, l: 'IMD RAIN', v: frame >= 33 && frame <= 78 ? '184mm' : '42mm', c: 'text-sky-300' },
-                    { icon: RouteIcon, l: 'OPEN ROUTES', v: frame >= 34 && frame <= 70 ? '7 / 12' : frame > 104 ? '12 / 12' : '11 / 12', c: 'text-emerald-300' },
-                    { icon: ShieldCheck, l: 'AI CONFIDENCE', v: `${Math.round((frame < 66 ? 0.4 + (frame / 149) * 0.3 : 0.72 + ((frame - 66) / 83) * 0.24) * 100)}%`, c: 'text-amber-300' },
+                    { icon: CloudRain, l: 'IMD RAIN', v: frame >= 33 && frame <= 78 ? '184mm' : '42mm', c: 'text-slate-100' },
+                    { icon: RouteIcon, l: 'OPEN ROUTES', v: frame >= 34 && frame <= 70 ? '7 / 12' : frame > 104 ? '12 / 12' : '11 / 12', c: 'text-slate-100' },
+                    { icon: ShieldCheck, l: 'AI CONFIDENCE', v: `${Math.round((frame < 66 ? 0.4 + (frame / 149) * 0.3 : 0.72 + ((frame - 66) / 83) * 0.24) * 100)}%`, c: 'text-slate-100' },
                   ].map((s) => (
-                    <div key={s.l} className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                    <div key={s.l} className="rounded-xl border border-white/10 bg-white/5 p-3">
                       <s.icon size={16} className={s.c} />
                       <div className="mt-2 text-[10px] font-semibold tracking-widest text-slate-400">{s.l}</div>
                       <div className="text-lg font-extrabold text-white">{s.v}</div>
@@ -712,17 +712,17 @@ export default function ScrollSequence() {
                   ))}
                 </div>
                 <div className="mt-3 space-y-2 text-[12px]">
-                  <div className="flex items-center justify-between rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2">
-                    <span className="font-semibold text-red-200">⚠ NH-6 Sonapur — landslide, both lanes</span>
-                    <span className="text-red-300/70">F{frame}</span>
+                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                    <span className="font-semibold text-slate-100">⚠ NH-6 Sonapur — landslide, both lanes</span>
+                    <span className="text-slate-400">F{frame}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2">
-                    <span className="font-semibold text-emerald-200">◆ AI reroute via NH-27 • saves 5.2 hrs</span>
-                    <span className="text-emerald-300/70">-63%</span>
+                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                    <span className="font-semibold text-slate-100">◆ AI reroute via NH-27 • saves 5.2 hrs</span>
+                    <span className="text-slate-300">-63%</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-slate-300">
+                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-300">
                     <span>📍 214 geo-tagged field reports verified</span>
-                    <span className="text-cyan-300">LIVE</span>
+                    <span>LIVE</span>
                   </div>
                 </div>
                 <div className="mt-4 flex items-center justify-between text-[11px] text-slate-400">
@@ -733,14 +733,14 @@ export default function ScrollSequence() {
                   {Array.from({ length: 24 }).map((_, i) => {
                     const f = Math.round(1 + (i / 23) * 148);
                     const active = Math.abs(f - frame) < 6;
-                    return <div key={i} className={`h-6 flex-1 rounded-sm transition-all ${active ? 'bg-emerald-300' : f <= frame ? 'bg-cyan-500/60' : 'bg-white/10'}`} />;
+                    return <div key={i} className={`h-6 flex-1 rounded-sm transition-all ${active ? 'bg-white' : f <= frame ? 'bg-white/40' : 'bg-white/10'}`} />;
                   })}
                 </div>
               </div>
             </div>
           </div>
         </motion.div>
-        <div className="absolute bottom-0 left-0 z-20 h-[3px] bg-gradient-to-r from-cyan-400 via-emerald-400 to-amber-300 transition-all" style={{ width: `${progress * 100}%` }} />
+        <div className="absolute bottom-0 left-0 z-20 h-[3px] bg-white/80 transition-all" style={{ width: `${progress * 100}%` }} />
       </div>
     </div>
   );
