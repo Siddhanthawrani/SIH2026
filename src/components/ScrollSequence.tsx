@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { ChevronDown, Play, Pause, Maximize2, Radio, CloudRain, Route as RouteIcon, ShieldCheck } from 'lucide-react';
 
 const TOTAL_FRAMES = 149;
 
@@ -44,54 +42,6 @@ function drawImageCover(
   ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
 }
 
-type Phase = {
-  range: [number, number];
-  kicker: string;
-  title: string;
-  desc: string;
-  badge: string;
-  color: string;
-};
-
-const PHASES: Phase[] = [
-  {
-    range: [1, 32],
-    kicker: 'SEQUENCE 01 — TERRAIN',
-    title: '8 states. One fragile lifeline.',
-    desc: '92% of NER freight moves by road through narrow mountain corridors. A single closure isolates entire districts.',
-    badge: 'NH-6 • NH-27 • NH-29 CORRIDORS',
-    color: '#22d3ee',
-  },
-  {
-    range: [33, 66],
-    kicker: 'SEQUENCE 02 — DISRUPTION',
-    title: 'Landslide. Flood. Blackout.',
-    desc: 'Monsoon 2024: 1,400+ road block events in 90 days. NERVE detects them in minutes — not days.',
-    badge: 'LIVE DISRUPTION SIMULATION',
-    color: '#f87171',
-  },
-  {
-    range: [67, 104],
-    kicker: 'SEQUENCE 03 — INTELLIGENCE',
-    title: 'AI computes the way through.',
-    desc: '14 live parameters scored per segment — slope, rainfall, soil saturation, bridge load, convoy GPS, history.',
-    badge: 'NERVE AI CORE • v2.4',
-    color: '#34d399',
-  },
-  {
-    range: [105, 149],
-    kicker: 'SEQUENCE 04 — CLEARANCE',
-    title: 'Rerouted. Resupplied. Resilient.',
-    desc: 'Alternate corridors activated, fleets retracked, geo-tagged field reports verify every kilometre.',
-    badge: 'NETWORK RESTORED • 98.2% FLOW',
-    color: '#a78bfa',
-  },
-];
-
-function getPhase(frame: number): Phase {
-  return PHASES.find((p) => frame >= p.range[0] && frame <= p.range[1]) ?? PHASES[0];
-}
-
 const NODES = [
   { id: 'GHY', name: 'Guwahati', x: 0.22, y: 0.62 },
   { id: 'SHL', name: 'Shillong', x: 0.34, y: 0.72 },
@@ -120,6 +70,8 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 function drawFrame(ctx: CanvasRenderingContext2D, W: number, H: number, frame: number) {
+  // Fallback render for the same 149 frames when the user's stills have not
+  // decoded yet. Pure footage — no text baked into the canvas.
   const t = (frame - 1) / (TOTAL_FRAMES - 1);
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   if (frame <= 32) {
@@ -307,18 +259,6 @@ function drawFrame(ctx: CanvasRenderingContext2D, W: number, H: number, frame: n
     });
     ctx.stroke();
     ctx.restore();
-    if (alpha > 0.5) {
-      ctx.save();
-      ctx.fillStyle = `rgba(6,40,30,${alpha})`;
-      ctx.strokeStyle = `rgba(52,211,153,${alpha})`;
-      const lx = px(0.62), ly = py(0.48);
-      roundRect(ctx, lx - 4, ly - 32, 176, 26, 13);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = `rgba(167,243,208,${alpha})`;
-      ctx.font = '600 11px Inter, sans-serif';
-      ctx.fillText('◆ AI REROUTE  +38 min  •  SAFE', lx + 10, ly - 14);
-      ctx.restore();
-    }
   }
 
   NODES.forEach((n, i) => {
@@ -344,9 +284,6 @@ function drawFrame(ctx: CanvasRenderingContext2D, W: number, H: number, frame: n
     ctx.beginPath();
     ctx.arc(x, y, isHub ? 2.6 : 1.8, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = 'rgba(226,232,240,0.92)';
-    ctx.font = `${isHub ? '700' : '500'} ${isHub ? 11 : 10}px Inter, sans-serif`;
-    ctx.fillText(n.id, x + 10, y + 4);
     ctx.restore();
   });
 
@@ -360,19 +297,13 @@ function drawFrame(ctx: CanvasRenderingContext2D, W: number, H: number, frame: n
   const hudX = W * 0.06, hudW = W * 0.30;
   if (W > 700) {
     ctx.save();
-    ctx.fillStyle = 'rgba(148,163,184,0.5)';
-    ctx.font = '600 10px Inter, sans-serif';
-    ctx.fillText('NETWORK FLOW  •  LIVE TELEMETRY', hudX, H * 0.66);
     const metrics = [
-      { label: 'FLOW', v: frame < 34 ? 0.86 : frame < 70 ? 0.86 - ((frame - 34) / 36) * 0.5 : frame < 108 ? 0.42 + ((frame - 70) / 38) * 0.34 : 0.94, c: '#22d3ee' },
-      { label: 'RISK', v: frame < 34 ? 0.18 : frame < 66 ? 0.18 + ((frame - 34) / 32) * 0.64 : frame < 108 ? 0.82 - ((frame - 66) / 42) * 0.5 : 0.14, c: '#f87171' },
-      { label: 'AI CONF', v: frame < 66 ? 0.4 + (frame / 149) * 0.3 : 0.72 + ((frame - 66) / 83) * 0.24, c: '#34d399' },
+      { v: frame < 34 ? 0.86 : frame < 70 ? 0.86 - ((frame - 34) / 36) * 0.5 : frame < 108 ? 0.42 + ((frame - 70) / 38) * 0.34 : 0.94, c: '#22d3ee' },
+      { v: frame < 34 ? 0.18 : frame < 66 ? 0.18 + ((frame - 34) / 32) * 0.64 : frame < 108 ? 0.82 - ((frame - 66) / 42) * 0.5 : 0.14, c: '#f87171' },
+      { v: frame < 66 ? 0.4 + (frame / 149) * 0.3 : 0.72 + ((frame - 66) / 83) * 0.24, c: '#34d399' },
     ];
     metrics.forEach((m, mi) => {
       const by = H * 0.70 + mi * 34;
-      ctx.fillStyle = 'rgba(148,163,184,0.7)';
-      ctx.font = '600 10px Inter, sans-serif';
-      ctx.fillText(m.label, hudX, by + 4);
       ctx.fillStyle = 'rgba(30,41,59,0.9)';
       roundRect(ctx, hudX + 52, by - 8, hudW - 100, 12, 6);
       ctx.fill();
@@ -381,9 +312,6 @@ function drawFrame(ctx: CanvasRenderingContext2D, W: number, H: number, frame: n
       roundRect(ctx, hudX + 52, by - 8, (hudW - 100) * Math.max(0.04, Math.min(1, m.v)), 12, 6);
       ctx.fill();
       ctx.shadowBlur = 0;
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = '700 10px Inter, sans-serif';
-      ctx.fillText(`${Math.round(m.v * 100)}%`, hudX + hudW - 38, by + 4);
     });
     ctx.restore();
   }
@@ -399,24 +327,17 @@ export default function ScrollSequence() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [frame, setFrame] = useState(1);
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [sourceMode, setSourceMode] = useState<'checking' | 'frames' | 'preview'>('checking');
-  const [loadedCount, setLoadedCount] = useState(0);
-  const [showFolderHelp, setShowFolderHelp] = useState(false);
-  const playRef = useRef<number | null>(null);
   const frameRef = useRef(1);
-  const playingRef = useRef(false);
   // Cache of decoded stills: frame number → <img>. Filled progressively.
   const cacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
   const failedRef = useRef<Set<number>>(new Set());
-  const sourceModeRef = useRef<'checking' | 'frames' | 'preview'>('checking');
-  sourceModeRef.current = sourceMode;
+  // This hero shows ONLY the user's scrollable video: frame_001 → frame_149
+  // from public/frames/. No overlay UI, no text, no boxes on top.
+  const [, forceTick] = useState(0);
 
   // Probe `public/frames/` (served at /frames/frame_001.jpg … /frames/frame_149.jpg).
-  // Tries frame 1 + 75 + 149 in jpg/jpeg/png/webp — if any decodes, the
-  // folder exists and we switch to real-footage mode; otherwise we stay on
-  // the built-in cinematic preview so the page never shows a black screen.
+  // Tries frame 1 + 75 + 149 in jpg/jpeg/png/webp; progressive fetch fills
+  // the rest so scrubbing frame_001 → frame_149 stays smooth.
   useEffect(() => {
     let cancelled = false;
     const tryLoad = (n: number): Promise<HTMLImageElement | null> =>
@@ -444,8 +365,7 @@ export default function ScrollSequence() {
         ([1, 75, 149] as const).forEach((n, i) => {
           if (probes[i]) cacheRef.current.set(n, probes[i] as HTMLImageElement);
         });
-        setLoadedCount(cacheRef.current.size);
-        setSourceMode('frames');
+        forceTick((t) => t + 1);
         // Progressively fetch the rest (low priority, closest to frame 1 first).
         let n = 1;
         const pump = () => {
@@ -474,7 +394,6 @@ export default function ScrollSequence() {
                     const img = new Image();
                     img.onload = () => {
                       cacheRef.current.set(f, img);
-                      setLoadedCount(cacheRef.current.size);
                       done();
                     };
                     img.onerror = () => {
@@ -489,9 +408,9 @@ export default function ScrollSequence() {
           ).then(() => setTimeout(pump, 60));
         };
         pump();
-      } else {
-        setSourceMode('preview');
       }
+      // No else needed: with no user frames, updateCanvas falls back to the
+      // built-in cinematic render for the same 149 frames automatically.
     })();
     return () => {
       cancelled = true;
@@ -512,9 +431,10 @@ export default function ScrollSequence() {
       canvas.height = Math.round(H * dpr);
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // ★ If the user dropped 001→149 stills into public/frames/, scrub them.
-    //   Falls back to the built-in cinematic preview while a frame decodes.
-    if (sourceModeRef.current === 'frames') {
+    // User's scrollable video: frame_001 → frame_149 from public/frames/.
+    // No overlay, no text, no boxes — the hero canvas shows ONLY footage
+    // (falling back to the built-in 149-frame render until stills decode).
+    {
       let img = cacheRef.current.get(f);
       if (!img) {
         // Use nearest already-decoded frame so scrubbing stays smooth
@@ -532,28 +452,11 @@ export default function ScrollSequence() {
       }
       if (img) {
         drawImageCover(ctx, img, W, H);
-        // legibility grade so hero text stays readable over real footage
-        const grade = ctx.createLinearGradient(0, 0, 0, H);
-        grade.addColorStop(0, 'rgba(4,9,23,0.72)');
-        grade.addColorStop(0.45, 'rgba(4,9,23,0.30)');
-        grade.addColorStop(0.8, 'rgba(4,9,23,0.78)');
-        grade.addColorStop(1, 'rgba(4,9,23,0.92)');
-        ctx.fillStyle = grade;
-        ctx.fillRect(0, 0, W, H);
-        const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.95);
-        vig.addColorStop(0, 'rgba(0,0,0,0)');
-        vig.addColorStop(1, 'rgba(0,0,0,0.45)');
-        ctx.fillStyle = vig;
-        ctx.fillRect(0, 0, W, H);
         return;
       }
     }
     drawFrame(ctx, W, H, f);
   }, []);
-
-  useEffect(() => {
-    playingRef.current = playing;
-  }, [playing]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -562,12 +465,9 @@ export default function ScrollSequence() {
       const total = rect.height - window.innerHeight;
       const scrolled = Math.min(Math.max(-rect.top, 0), total);
       const p = total > 0 ? scrolled / total : 0;
-      setProgress(p);
-      if (!playingRef.current) {
-        const f = Math.min(TOTAL_FRAMES, Math.max(1, Math.round(1 + p * (TOTAL_FRAMES - 1))));
-        frameRef.current = f;
-        setFrame(f);
-      }
+      const f = Math.min(TOTAL_FRAMES, Math.max(1, Math.round(1 + p * (TOTAL_FRAMES - 1))));
+      frameRef.current = f;
+      setFrame(f);
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -580,167 +480,14 @@ export default function ScrollSequence() {
 
   useEffect(() => {
     updateCanvas(frame);
-  }, [frame, updateCanvas, sourceMode, loadedCount]);
+  }, [frame, updateCanvas]);
 
-  useEffect(() => {
-    if (playing) {
-      const tick = () => {
-        frameRef.current += 0.6;
-        if (frameRef.current >= TOTAL_FRAMES) frameRef.current = 1;
-        setFrame(Math.round(frameRef.current));
-        playRef.current = requestAnimationFrame(tick);
-      };
-      playRef.current = requestAnimationFrame(tick);
-    } else if (playRef.current) cancelAnimationFrame(playRef.current);
-    return () => { if (playRef.current) cancelAnimationFrame(playRef.current); };
-  }, [playing]);
-
-  const phase = getPhase(frame);
-  const { scrollYProgress } = useScroll();
-  const heroY = useTransform(scrollYProgress, [0, 0.2], [0, -60]);
-
+  // Top-of-page hero: ONLY the scrollable video (frame_001 → frame_149).
+  // No overlay UI, no counters, no text, no boxes, no CTAs on top.
   return (
     <div ref={wrapRef} className="relative" style={{ height: '380vh' }}>
-      <div className="sticky top-0 h-screen overflow-hidden bg-[#0d1526]">
-        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#0d1526] via-[#0d1526]/60 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#0d1526] via-[#0d1526]/70 to-transparent" />
-
-        <motion.div style={{ y: heroY }} className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center overflow-y-auto px-5 pt-24 pb-10 md:px-10">
-          <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-            <div>
-              <div className="mb-5 flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-semibold tracking-[0.16em] text-slate-200 backdrop-blur">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                  </span>
-                  SCROLL FILM • {String(frame).padStart(3, '0')} / {TOTAL_FRAMES}
-                </div>
-                {/* ★ video source: shows whether /frames/001–149.jpg was found */}
-                <button
-                  onClick={() => setShowFolderHelp(!showFolderHelp)}
-                  title="Where do the 149 frames go? Click for the guide."
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10.5px] font-bold tracking-wider backdrop-blur transition ${
-                    sourceMode === 'frames'
-                      ? 'border-white/25 bg-white/10 text-slate-100 hover:bg-white/15'
-                      : 'border-white/25 bg-white/10 text-slate-200 hover:bg-white/15'
-                  }`}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${sourceMode === 'frames' ? 'bg-emerald-300' : 'bg-amber-300 animate-pulse'}`} />
-                  {sourceMode === 'frames'
-                    ? `YOUR FOOTAGE • ${loadedCount}/149 LOADED ⓘ`
-                    : sourceMode === 'checking'
-                      ? 'CHECKING /frames/… ⓘ'
-                      : 'PREVIEW MODE — ADD /frames/ ⓘ'}
-                </button>
-              </div>
-              {/* ★ in-code guide: where to put the 001–149 folder */}
-              {showFolderHelp && (
-                <div className="mb-5 max-w-xl rounded-2xl border border-white/15 bg-[#131f38]/95 p-5 text-[12.5px] leading-relaxed text-slate-300 shadow-2xl backdrop-blur-xl">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-extrabold tracking-[0.16em] text-slate-200">WHERE TO PUT YOUR 149 FRAMES</span>
-                    <button onClick={() => setShowFolderHelp(false)} className="rounded-lg border border-white/15 px-2 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10">Close ✕</button>
-                  </div>
-                  <ol className="mt-3 list-decimal space-y-1.5 pl-5">
-                    <li>Your frames live in <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-slate-100">public/frames/</code> in this repo.</li>
-                    <li>Named <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-slate-100">frame_001.jpg → frame_149.jpg</code> (prefix + zero-padded). <code className="font-mono text-[11px]">.jpeg/.png/.webp</code> also work.</li>
-                    <li>Rebuild + redeploy — <strong className="text-white">no code change needed</strong>. Scroll will scrub your footage instead of this preview.</li>
-                  </ol>
-                  <div className="mt-3 rounded-xl border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-slate-300">
-                    <div className="text-slate-500"># from a video file — one command:</div>
-                    <div className="mt-1 text-slate-100">./scripts/extract-frames.sh my-video.mp4</div>
-                    <div className="mt-1 text-slate-500"># → writes 149 stills to public/frames/frame_%03d.jpg</div>
-                  </div>
-                  <div className="mt-2 text-[11.5px] text-slate-400">Script location in code: <code className="font-mono text-slate-200">scripts/extract-frames.sh</code> • Config: <code className="font-mono text-slate-200">FRAME_CONFIG</code> at top of <code className="font-mono text-slate-200">src/components/ScrollSequence.tsx</code></div>
-                </div>
-              )}
-              <h1 className="text-[42px] font-extrabold leading-[1.0] tracking-tight text-white sm:text-6xl lg:text-[68px]">
-                NERVE
-                <span className="block text-slate-100">for the North East.</span>
-              </h1>
-              <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-slate-300 md:text-lg">
-                The AI-powered <span className="font-semibold text-white">Smart Logistics Accessibility Intelligence Platform</span> for the North Eastern Region — real-time visibility, predictive alerts &amp; optimised routing across 8 states.
-              </p>
-              <div key={phase.kicker} className="mt-6 max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur-xl">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold tracking-[0.16em] text-slate-200">{phase.kicker}</span>
-                  <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-slate-300">{phase.badge}</span>
-                </div>
-                <motion.h2 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-2 text-2xl font-bold tracking-tight text-white md:text-[26px]">{phase.title}</motion.h2>
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-1.5 text-sm leading-relaxed text-slate-300">{phase.desc}</motion.p>
-                <div className="mt-4 flex h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-white transition-all duration-150" style={{ width: `${(frame / TOTAL_FRAMES) * 100}%` }} />
-                </div>
-              </div>
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <a href="#platform" className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-[#0a1628] shadow-lg transition hover:bg-slate-100">
-                  <Radio size={16} /> Explore live platform
-                </a>
-                <a href="#funding" className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/10">
-                  <ShieldCheck size={16} /> Funding case
-                </a>
-                <button onClick={() => setPlaying(!playing)} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-3.5 text-sm font-semibold text-slate-100 transition hover:bg-white/10">
-                  {playing ? <Pause size={16} /> : <Play size={16} />} {playing ? 'Pause film' : 'Auto-play film'}
-                </button>
-              </div>
-              <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-[13px] text-slate-300">
-                <span><strong className="text-white">1,400+</strong> block events / monsoon</span>
-                <span><strong className="text-white">-63%</strong> delay with NERVE reroute</span>
-                <span><strong className="text-white">14</strong> AI parameters / segment</span>
-              </div>
-            </div>
-            <div className="hidden lg:block">
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-5 shadow-2xl backdrop-blur-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-slate-200">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-400" /> NER CONTROL TOWER — LIVE
-                  </div>
-                  <Maximize2 size={14} className="text-slate-400" />
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-3">
-                  {[
-                    { icon: CloudRain, l: 'IMD RAIN', v: frame >= 33 && frame <= 78 ? '184mm' : '42mm', c: 'text-slate-100' },
-                    { icon: RouteIcon, l: 'OPEN ROUTES', v: frame >= 34 && frame <= 70 ? '7 / 12' : frame > 104 ? '12 / 12' : '11 / 12', c: 'text-slate-100' },
-                    { icon: ShieldCheck, l: 'AI CONFIDENCE', v: `${Math.round((frame < 66 ? 0.4 + (frame / 149) * 0.3 : 0.72 + ((frame - 66) / 83) * 0.24) * 100)}%`, c: 'text-slate-100' },
-                  ].map((s) => (
-                    <div key={s.l} className="rounded-xl border border-white/10 bg-white/5 p-3">
-                      <s.icon size={16} className={s.c} />
-                      <div className="mt-2 text-[10px] font-semibold tracking-widest text-slate-400">{s.l}</div>
-                      <div className="text-lg font-extrabold text-white">{s.v}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 space-y-2 text-[12px]">
-                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                    <span className="font-semibold text-slate-100">⚠ NH-6 Sonapur — landslide, both lanes</span>
-                    <span className="text-slate-400">F{frame}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                    <span className="font-semibold text-slate-100">◆ AI reroute via NH-27 • saves 5.2 hrs</span>
-                    <span className="text-slate-300">-63%</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-300">
-                    <span>📍 214 geo-tagged field reports verified</span>
-                    <span>LIVE</span>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>FRAME {String(frame).padStart(3, '0')} / {TOTAL_FRAMES} — scrub by scrolling</span>
-                  <span className="inline-flex items-center gap-1">Keep scrolling <ChevronDown size={12} className="animate-bounce" /></span>
-                </div>
-                <div className="mt-2 flex gap-1">
-                  {Array.from({ length: 24 }).map((_, i) => {
-                    const f = Math.round(1 + (i / 23) * 148);
-                    const active = Math.abs(f - frame) < 6;
-                    return <div key={i} className={`h-6 flex-1 rounded-sm transition-all ${active ? 'bg-white' : f <= frame ? 'bg-white/40' : 'bg-white/10'}`} />;
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-        <div className="absolute bottom-0 left-0 z-20 h-[3px] bg-white/80 transition-all" style={{ width: `${progress * 100}%` }} />
+      <div className="sticky top-0 h-screen overflow-hidden bg-black">
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-label="NERVE scrollable film — 149 frames" />
       </div>
     </div>
   );

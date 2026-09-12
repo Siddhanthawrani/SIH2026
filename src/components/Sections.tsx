@@ -212,23 +212,7 @@ export function Platform() {
     { icon: BellRing, t: 'Blocked-road broadcasts', d: 'SMS + IVR in 6 languages + WhatsApp to drivers, DCs, BRO units and transporters in one tap.', tag: 'MULTI-CHANNEL', tint: 'nv-tint-cream', ic: 'text-amber-700' },
     { icon: MapPinned, t: 'Geo-tagged field reports', d: 'Drivers & volunteers upload photo + GPS. AI verifies duplicates, rewards accuracy, kills rumours.', tag: 'CROWD-TRUTH', tint: 'nv-tint-mint', ic: 'text-emerald-700' },
   ];
-  // Six-card rise-and-settle reveal — motion only. Cards rest at their
-  // existing 3×2 grid (below PREDICTIVE ALERTS, above COULD HAVE BEEN
-  // PREVENTED). whileInView replays on every entry (no once:true).
-  // Visibly compressed start (64–72px inward, 0.94 scale, blur 10) so
-  // the unfold reads clearly; ~1.1s premium ease, 80ms center-out
-  // stagger. GPU transform/opacity/filter only. No copy/layout changes.
-  const EASE = [0.22, 1, 0.36, 1] as const;
-  const reduce = useReducedMotion() ?? false;
-  const VEC = [
-    { x: 56, y: 44 },
-    { x: 0, y: 64 },
-    { x: -56, y: 44 },
-    { x: 56, y: -44 },
-    { x: 0, y: -64 },
-    { x: -56, y: -44 },
-  ];
-  const STAG = [0.24, 0, 0.32, 0.4, 0.08, 0.48];
+  // Six feature cards — static, no scroll animation (restored to normal).
   return (
     <section id="platform" className="relative z-10 mx-auto max-w-7xl scroll-mt-28 px-5 py-12 md:px-10 md:py-16">
       <Replay className="grid gap-6 lg:grid-cols-[1fr_0.7fr] lg:items-end">
@@ -241,96 +225,23 @@ export function Platform() {
       <Replay delay={0.08} className="mt-8">
         <DashboardMock />
       </Replay>
-      <motion.div
-        className="relative mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: false, amount: 0.3 }}
-      >
-        {/* restrained atmospheric depth behind the six cards */}
-        {!reduce && (
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute -inset-4"
-            style={{
-              background:
-                'radial-gradient(320px 200px at 12% 50%, rgba(34,211,238,0.10), transparent 70%), radial-gradient(360px 220px at 50% 50%, rgba(167,139,250,0.10), transparent 70%), radial-gradient(320px 200px at 88% 50%, rgba(251,191,36,0.08), transparent 70%)',
-            }}
-            variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }}
-            transition={{ duration: 0.6, ease: EASE }}
-          />
-        )}
+      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {feats.map((f, i) => (
-          <motion.div
+          <div
             key={f.t}
-            className={`nv-card ${f.tint} group relative overflow-hidden p-6 md:hover:-translate-y-[3px] md:hover:border-white/90 md:hover:shadow-[0_2px_4px_rgba(16,36,70,0.08),0_22px_48px_-16px_rgba(16,36,70,0.24)] ${i === 0 ? 'md:col-span-2 lg:col-span-1' : ''}`}
-            style={{ willChange: 'transform, opacity, filter', transformOrigin: 'center' }}
-            variants={
-              reduce
-                ? { hidden: { opacity: 0 }, show: { opacity: 1 } }
-                : {
-                    hidden: { x: VEC[i].x, y: VEC[i].y, scale: 0.94, opacity: 0, filter: 'blur(10px)' },
-                    show: { x: 0, y: 0, scale: 1, opacity: 1, filter: 'blur(0px)' },
-                  }
-            }
-            transition={{ duration: reduce ? 0.25 : 1.1, delay: reduce ? 0 : STAG[i], ease: EASE }}
+            className={`nv-card ${f.tint} group p-6 ${i === 0 ? 'md:col-span-2 lg:col-span-1' : ''}`}
           >
             <div className="flex items-start justify-between gap-3">
-              <motion.span
-                className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm"
-                variants={
-                  reduce
-                    ? { hidden: { opacity: 0 }, show: { opacity: 1 } }
-                    : { hidden: { opacity: 0.4, scale: 0.9 }, show: { opacity: 1, scale: 1 } }
-                }
-                transition={{ duration: reduce ? 0.2 : 0.5, delay: reduce ? 0 : STAG[i] + 0.45, ease: EASE }}
-              >
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm">
                 <f.icon size={20} className={f.ic} />
-              </motion.span>
-              <motion.span
-                className="overflow-hidden rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-bold tracking-wider text-slate-500"
-                variants={
-                  reduce
-                    ? { hidden: { opacity: 0 }, show: { opacity: 1 } }
-                    : { hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }
-                }
-                transition={{ duration: reduce ? 0.2 : 0.5, delay: reduce ? 0 : STAG[i] + 0.52, ease: EASE }}
-              >
-                <motion.span
-                  className="inline-block"
-                  variants={reduce ? { hidden: { opacity: 0 }, show: { opacity: 1 } } : { hidden: { x: '-70%', opacity: 0 }, show: { x: '0%', opacity: 1 } }}
-                  transition={{ duration: reduce ? 0.2 : 0.55, delay: reduce ? 0 : STAG[i] + 0.52, ease: EASE }}
-                >
-                  {f.tag}
-                </motion.span>
-              </motion.span>
+              </span>
+              <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-bold tracking-wider text-slate-500">{f.tag}</span>
             </div>
-            <motion.h3
-              className="mt-4 text-[16px] font-extrabold tracking-tight text-[#0a1628]"
-              variants={reduce ? { hidden: { opacity: 0 }, show: { opacity: 1 } } : { hidden: { opacity: 0, y: 7 }, show: { opacity: 1, y: 0 } }}
-              transition={{ duration: reduce ? 0.2 : 0.5, delay: reduce ? 0 : STAG[i] + 0.6, ease: EASE }}
-            >
-              {f.t}
-            </motion.h3>
-            <motion.p
-              className="mt-2 text-[13.5px] leading-relaxed text-slate-600"
-              variants={reduce ? { hidden: { opacity: 0 }, show: { opacity: 1 } } : { hidden: { opacity: 0, y: 7 }, show: { opacity: 1, y: 0 } }}
-              transition={{ duration: reduce ? 0.2 : 0.5, delay: reduce ? 0 : STAG[i] + 0.68, ease: EASE }}
-            >
-              {f.d}
-            </motion.p>
-            {!reduce && (
-              <motion.span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-[inherit]"
-                style={{ background: 'linear-gradient(105deg, transparent 44%, rgba(255,255,255,0.45) 50%, transparent 56%)' }}
-                variants={{ hidden: { x: '-130%', opacity: 0 }, show: { x: '130%', opacity: [0, 1, 0] } }}
-                transition={{ duration: 0.7, delay: STAG[i] + 0.75, ease: EASE }}
-              />
-            )}
-          </motion.div>
+            <h3 className="mt-4 text-[16px] font-extrabold tracking-tight text-[#0a1628]">{f.t}</h3>
+            <p className="mt-2 text-[13.5px] leading-relaxed text-slate-600">{f.d}</p>
+          </div>
         ))}
-      </motion.div>
+      </div>
     </section>
   );
 }
