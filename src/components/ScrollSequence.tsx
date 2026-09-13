@@ -925,6 +925,25 @@ export default function ScrollSequence() {
   const resizeRafRef =
     useRef<number | null>(null);
 
+  // FIX: cached CSS box size + DPR for the canvas. Populated on mount and on
+  // resize only — never read during a per-frame draw. This is what used to
+  // force a synchronous layout (getBoundingClientRect) on every scroll frame.
+  const sizeRef = useRef({
+    W: 320,
+    H: 320,
+    dpr: 1,
+  });
+
+  // FIX: bounded worker pool for background frame loading. Instead of
+  // spawning a fresh batch of workers every time the scroll frame changes
+  // (which could stack up many concurrent worker pools while scrolling
+  // fast), we keep a single pool alive and just let it keep re-picking the
+  // frame closest to wherever the user currently is.
+  const workersActiveRef =
+    useRef(0);
+
+  const PRELOAD_CONCURRENCY = 6;
+
   // ─────────────────────────────────────────────────────────────────────────
   // LOAD ONE FRAME
   // ─────────────────────────────────────────────────────────────────────────
@@ -1128,6 +1147,10 @@ export default function ScrollSequence() {
 
   // ─────────────────────────────────────────────────────────────────────────
   // RESIZE CANVAS
+  // FIX: this now ALSO updates sizeRef with the CSS box size + DPR, so that
+  // drawCurrentFrame never has to call getBoundingClientRect() itself. This
+  // function is only ever invoked on mount and from the resize/orientation
+  // handlers below — not from the per-frame draw path.
   // ─────────────────────────────────────────────────────────────────────────
 
   const resizeCanvas =
@@ -1186,10 +1209,20 @@ export default function ScrollSequence() {
         canvas.height =
           targetHeight;
       }
+
+      // FIX: cache the box size + dpr for the draw loop to read.
+      sizeRef.current = {
+        W,
+        H,
+        dpr,
+      };
     }, []);
 
   // ─────────────────────────────────────────────────────────────────────────
   // DRAW CURRENT FRAME
+  // FIX: no longer calls resizeCanvas() or getBoundingClientRect(). It reads
+  // the last-known box size from sizeRef instead, which removes the forced
+  // synchronous layout that was happening on every scroll-driven paint.
   // ─────────────────────────────────────────────────────────────────────────
 
   const drawCurrentFrame =
@@ -1214,8 +1247,6 @@ export default function ScrollSequence() {
         return;
       }
 
-      resizeCanvas();
-
       const ctx =
         canvas.getContext('2d');
 
@@ -1223,27 +1254,8 @@ export default function ScrollSequence() {
         return;
       }
 
-      const rect =
-        canvas.getBoundingClientRect();
-
-      const W =
-        Math.max(
-          320,
-          rect.width,
-        );
-
-      const H =
-        Math.max(
-          320,
-          rect.height,
-        );
-
-      const dpr =
-        Math.min(
-          2,
-          window.devicePixelRatio ||
-            1,
-        );
+      const { W, H, dpr } =
+        sizeRef.current;
 
       ctx.setTransform(
         dpr,
@@ -1280,7 +1292,6 @@ export default function ScrollSequence() {
         frame;
     }, [
       getBestAvailableFrame,
-      resizeCanvas,
     ]);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1304,137 +1315,138 @@ export default function ScrollSequence() {
     ]);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // PRELOAD AROUND CURRENT FRAME
+  // PICK NEXT FRAME TO LOAD
+  // FIX: replaces the old "build a big priority array, spawn 6 workers over
+  // it" approach. This always looks outward from wherever frameRef.current
+  // is RIGHT NOW, so a single long-lived worker pool naturally stays
+  // prioritized around the user's live scroll position without needing to
+  // be re-spawned on every frame change.
   // ─────────────────────────────────────────────────────────────────────────
 
-  const preloadAround =
-    useCallback(
-      (
-        center: number,
-      ) => {
-        const priority: number[] =
-          [];
+  const pickNextFrameToLoad =
+    useCallback((): number | null => {
+      const center =
+        frameRef.current;
 
-        // Always load the exact frame first.
-        priority.push(
+      if (
+        !cacheRef.current.has(
           center,
-        );
+        ) &&
+        !failedRef.current.has(
+          center,
+        ) &&
+        !loadingRef.current.has(
+          center,
+        )
+      ) {
+        return center;
+      }
 
-        // Then nearby frames.
-        for (
-          let d = 1;
-          d <= 12;
-          d++
+      for (
+        let d = 1;
+        d < TOTAL_FRAMES;
+        d++
+      ) {
+        const before =
+          center - d;
+
+        if (
+          before >= 1 &&
+          !cacheRef.current.has(
+            before,
+          ) &&
+          !failedRef.current.has(
+            before,
+          ) &&
+          !loadingRef.current.has(
+            before,
+          )
         ) {
-          if (
-            center - d >=
-            1
-          ) {
-            priority.push(
-              center - d,
-            );
-          }
-
-          if (
-            center + d <=
-            TOTAL_FRAMES
-          ) {
-            priority.push(
-              center + d,
-            );
-          }
+          return before;
         }
 
-        // Then a wider buffer.
-        for (
-          let d = 13;
-          d <= 30;
-          d++
+        const after =
+          center + d;
+
+        if (
+          after <=
+            TOTAL_FRAMES &&
+          !cacheRef.current.has(
+            after,
+          ) &&
+          !failedRef.current.has(
+            after,
+          ) &&
+          !loadingRef.current.has(
+            after,
+          )
         ) {
-          if (
-            center - d >=
-            1
-          ) {
-            priority.push(
-              center - d,
-            );
-          }
-
-          if (
-            center + d <=
-            TOTAL_FRAMES
-          ) {
-            priority.push(
-              center + d,
-            );
-          }
+          return after;
         }
+      }
 
-        // Remove duplicates.
-        const unique =
-          Array.from(
-            new Set(priority),
-          );
+      return null;
+    }, []);
 
-        // Limit simultaneous downloads.
-        const CONCURRENCY = 6;
+  // ─────────────────────────────────────────────────────────────────────────
+  // ENSURE PRELOAD WORKERS ARE RUNNING
+  // FIX: replaces preloadAround(). Instead of building a static priority
+  // list and firing a fresh batch of workers every time the frame changes,
+  // this just tops the pool back up to PRELOAD_CONCURRENCY if any workers
+  // have finished (e.g. because nothing was left to load at the time). It's
+  // safe to call this on every scroll frame — it's a no-op once the pool is
+  // full.
+  // ─────────────────────────────────────────────────────────────────────────
 
-        let index = 0;
+  const ensurePreloadWorkers =
+    useCallback(() => {
+      while (
+        workersActiveRef.current <
+        PRELOAD_CONCURRENCY
+      ) {
+        workersActiveRef.current += 1;
 
-        const worker =
-          async () => {
-            while (
-              index <
-              unique.length
-            ) {
-              const current =
-                index++;
+        (async () => {
+          try {
+            for (;;) {
+              const next =
+                pickNextFrameToLoad();
 
-              const frameNumber =
-                unique[
-                  current
-                ];
+              if (next === null) {
+                break;
+              }
 
-              if (
-                !cacheRef.current.has(
-                  frameNumber,
-                ) &&
-                !failedRef.current.has(
-                  frameNumber,
-                )
-              ) {
+              const img =
                 await loadFrame(
-                  frameNumber,
+                  next,
                 );
 
-                // If the frame we just loaded is the frame currently being
-                // displayed, immediately schedule a new canvas draw.
-                if (
-                  frameRef.current ===
-                  frameNumber
-                ) {
-                  requestDraw();
-                }
+              if (
+                img &&
+                frameRef.current ===
+                  next
+              ) {
+                requestDraw();
               }
             }
-          };
-
-        for (
-          let i = 0;
-          i < CONCURRENCY;
-          i++
-        ) {
-          void worker();
-        }
-      },
-      [
-        loadFrame,
-        requestDraw,
-      ],
-    );
+          } finally {
+            workersActiveRef.current -= 1;
+          }
+        })();
+      }
+    }, [
+      pickNextFrameToLoad,
+      loadFrame,
+      requestDraw,
+    ]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // INITIAL LOAD
+  // FIX: the old separate "background load entire sequence" batch loop is
+  // gone — ensurePreloadWorkers()'s outward search already covers the whole
+  // sequence once the frames near the current scroll position are loaded,
+  // using the same bounded worker pool instead of a second, uncoordinated
+  // one.
   // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -1442,19 +1454,20 @@ export default function ScrollSequence() {
 
     const initialize =
       async () => {
+        resizeCanvas();
+
         // Load first / middle / last immediately.
-        const probes =
-          await Promise.all([
-            loadFrame(1),
-            loadFrame(
-              Math.ceil(
-                TOTAL_FRAMES / 2,
-              ),
+        await Promise.all([
+          loadFrame(1),
+          loadFrame(
+            Math.ceil(
+              TOTAL_FRAMES / 2,
             ),
-            loadFrame(
-              TOTAL_FRAMES,
-            ),
-          ]);
+          ),
+          loadFrame(
+            TOTAL_FRAMES,
+          ),
+        ]);
 
         if (cancelled) {
           return;
@@ -1466,85 +1479,8 @@ export default function ScrollSequence() {
 
         requestDraw();
 
-        // Start loading around the initial frame.
-        preloadAround(
-          frameRef.current,
-        );
-
-        // Background loading of the entire sequence.
-        //
-        // This is intentionally lower priority than the frames around the
-        // user's current scroll position.
-        const backgroundLoad =
-          async () => {
-            const BATCH_SIZE = 3;
-
-            for (
-              let start = 1;
-              start <=
-              TOTAL_FRAMES;
-              start +=
-                BATCH_SIZE
-            ) {
-              if (
-                cancelled
-              ) {
-                return;
-              }
-
-              const batch: number[] =
-                [];
-
-              for (
-                let i = 0;
-                i < BATCH_SIZE;
-                i++
-              ) {
-                const n =
-                  start + i;
-
-                if (
-                  n >
-                  TOTAL_FRAMES
-                ) {
-                  break;
-                }
-
-                if (
-                  !cacheRef.current.has(
-                    n,
-                  ) &&
-                  !failedRef.current.has(
-                    n,
-                  )
-                ) {
-                  batch.push(n);
-                }
-              }
-
-              if (
-                batch.length > 0
-              ) {
-                await Promise.all(
-                  batch.map(
-                    (n) =>
-                      loadFrame(n),
-                  ),
-                );
-              }
-
-              // Small breathing room so the browser remains responsive.
-              await new Promise(
-                (resolve) =>
-                  setTimeout(
-                    resolve,
-                    20,
-                  ),
-              );
-            }
-          };
-
-        void backgroundLoad();
+        // Start the bounded background loading pool.
+        ensurePreloadWorkers();
       };
 
     void initialize();
@@ -1554,12 +1490,14 @@ export default function ScrollSequence() {
     };
   }, [
     loadFrame,
-    preloadAround,
+    resizeCanvas,
+    ensurePreloadWorkers,
     requestDraw,
   ]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // SCROLL HANDLING
+  // FIX: calls ensurePreloadWorkers() instead of preloadAround(newFrame).
   // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -1621,10 +1559,9 @@ export default function ScrollSequence() {
           frameRef.current =
             newFrame;
 
-          // Start loading the frames around the user's current position.
-          preloadAround(
-            newFrame,
-          );
+          // Top up the (already-running) preload pool — cheap no-op if
+          // it's already at full concurrency.
+          ensurePreloadWorkers();
 
           // Draw during the next browser paint.
           requestDraw();
@@ -1671,7 +1608,7 @@ export default function ScrollSequence() {
       }
     };
   }, [
-    preloadAround,
+    ensurePreloadWorkers,
     requestDraw,
   ]);
 
