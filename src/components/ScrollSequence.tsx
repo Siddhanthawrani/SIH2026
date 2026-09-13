@@ -2,6 +2,19 @@ import { useEffect, useRef, useCallback } from 'react';
 
 const TOTAL_FRAMES = 149;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// NERVE SCROLL VIDEO
+//
+// Frames:
+// public/frames/frame_001.jpg
+// public/frames/frame_002.jpg
+// ...
+// public/frames/frame_149.jpg
+//
+// The component loads frames progressively and prioritizes frames near the
+// current scroll position for smooth scrubbing.
+// ─────────────────────────────────────────────────────────────────────────────
+
 const FRAME_CONFIG = {
   folder: '/frames',
   count: TOTAL_FRAMES,
@@ -17,7 +30,7 @@ const frameUrl = (n: number, ext: string) =>
   )}.${ext}`;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FRAME DRAWING
+// DRAW IMAGE COVER
 // ─────────────────────────────────────────────────────────────────────────────
 
 function drawImageCover(
@@ -44,7 +57,7 @@ function drawImageCover(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FALLBACK CINEMATIC RENDER
+// FALLBACK RENDERER
 // ─────────────────────────────────────────────────────────────────────────────
 
 const NODES = [
@@ -100,7 +113,6 @@ function drawFrame(
 ) {
   const t = (frame - 1) / (TOTAL_FRAMES - 1);
 
-  // Background
   const bg = ctx.createLinearGradient(0, 0, 0, H);
 
   if (frame <= 32) {
@@ -137,7 +149,7 @@ function drawFrame(
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  // Stars
+  // Stars / particles
   ctx.save();
 
   for (let i = 0; i < 140; i++) {
@@ -146,7 +158,10 @@ function drawFrame(
 
     const tw =
       0.3 +
-      0.7 * Math.abs(Math.sin(frame * 0.05 + i));
+      0.7 *
+        Math.abs(
+          Math.sin(frame * 0.05 + i),
+        );
 
     ctx.fillStyle = `rgba(148,197,255,${0.12 * tw})`;
 
@@ -160,7 +175,7 @@ function drawFrame(
 
   ctx.restore();
 
-  // Waves
+  // Background waves
   const layers = [
     {
       amp: 0.10,
@@ -206,7 +221,9 @@ function drawFrame(
 
       ctx.lineTo(
         x,
-        H * L.base + n - t * 20 * li,
+        H * L.base +
+          n -
+          t * 20 * li,
       );
     }
 
@@ -217,7 +234,7 @@ function drawFrame(
     ctx.fill();
   });
 
-  // Rain
+  // Rain / particles
   if (frame >= 30 && frame <= 78) {
     const intensity =
       frame < 45
@@ -228,17 +245,10 @@ function drawFrame(
 
     ctx.save();
 
-    ctx.strokeStyle = `rgba(148,197,255,${
-      0.28 * intensity
-    })`;
-
+    ctx.strokeStyle = `rgba(148,197,255,${0.28 * intensity})`;
     ctx.lineWidth = 1;
 
-    for (
-      let i = 0;
-      i < 130 * intensity;
-      i++
-    ) {
+    for (let i = 0; i < 130 * intensity; i++) {
       const rx =
         ((i * 89.7 + frame * 14) % 1.2) *
           W -
@@ -287,8 +297,11 @@ function drawFrame(
   const mapW = W * 0.50;
   const mapH = H * 0.72;
 
-  const px = (nx: number) => mapX + nx * mapW;
-  const py = (ny: number) => mapY + ny * mapH;
+  const px = (nx: number) =>
+    mapX + nx * mapW;
+
+  const py = (ny: number) =>
+    mapY + ny * mapH;
 
   ctx.save();
 
@@ -310,7 +323,7 @@ function drawFrame(
 
   ctx.restore();
 
-  // Edges
+  // Roads / connections
   EDGES.forEach(([a, b], ei) => {
     const ax = px(NODES[a].x);
     const ay = py(NODES[a].y);
@@ -338,7 +351,6 @@ function drawFrame(
     if (blocked && !rerouted) {
       ctx.strokeStyle =
         'rgba(248,113,113,0.9)';
-
       ctx.lineWidth = 2.5;
       ctx.setLineDash([6, 6]);
       ctx.lineDashOffset =
@@ -346,7 +358,6 @@ function drawFrame(
     } else if (blocked && rerouted) {
       ctx.strokeStyle =
         'rgba(248,113,113,0.35)';
-
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 8]);
     } else if (
@@ -355,24 +366,20 @@ function drawFrame(
     ) {
       ctx.strokeStyle =
         'rgba(52,211,153,0.85)';
-
       ctx.lineWidth = 2.2;
       ctx.setLineDash([]);
 
       ctx.shadowColor =
         'rgba(52,211,153,0.6)';
-
       ctx.shadowBlur = 12;
     } else {
       ctx.strokeStyle =
         'rgba(56,189,248,0.7)';
-
       ctx.lineWidth = 2;
       ctx.setLineDash([]);
 
       ctx.shadowColor =
         'rgba(56,189,248,0.5)';
-
       ctx.shadowBlur = 8;
     }
 
@@ -394,6 +401,7 @@ function drawFrame(
     );
 
     ctx.stroke();
+
     ctx.restore();
 
     // Moving particles
@@ -464,8 +472,11 @@ function drawFrame(
       ctx.restore();
     }
 
-    // Block marker
-    if (blocked && !rerouted) {
+    // Block indicator
+    if (
+      blocked &&
+      !rerouted
+    ) {
       const bxm =
         (ax + bx) / 2;
 
@@ -474,7 +485,9 @@ function drawFrame(
 
       const pulse =
         6 +
-        Math.sin(frame * 0.35) *
+        Math.sin(
+          frame * 0.35,
+        ) *
           3;
 
       ctx.save();
@@ -496,7 +509,8 @@ function drawFrame(
 
       ctx.stroke();
 
-      ctx.fillStyle = '#ef4444';
+      ctx.fillStyle =
+        '#ef4444';
 
       ctx.shadowColor =
         '#ef4444';
@@ -515,7 +529,9 @@ function drawFrame(
 
       ctx.fill();
 
-      ctx.strokeStyle = '#fff';
+      ctx.strokeStyle =
+        '#fff';
+
       ctx.lineWidth = 2;
 
       ctx.beginPath();
@@ -546,7 +562,7 @@ function drawFrame(
     }
   });
 
-  // Escape route
+  // Green route
   if (frame >= 68) {
     const alpha = Math.min(
       1,
@@ -556,9 +572,7 @@ function drawFrame(
     ctx.save();
 
     ctx.strokeStyle =
-      `rgba(52,211,153,${
-        0.9 * alpha
-      })`;
+      `rgba(52,211,153,${0.9 * alpha})`;
 
     ctx.lineWidth = 3;
     ctx.setLineDash([10, 7]);
@@ -571,25 +585,39 @@ function drawFrame(
 
     ctx.shadowBlur = 18;
 
-    const seq = [0, 7, 6, 5, 4];
+    const seq = [
+      0,
+      7,
+      6,
+      5,
+      4,
+    ];
 
     ctx.beginPath();
 
     seq.forEach((ni, idx) => {
-      const x = px(NODES[ni].x);
-      const y = py(NODES[ni].y);
+      const x = px(
+        NODES[ni].x,
+      );
+
+      const y = py(
+        NODES[ni].y,
+      );
 
       if (idx === 0) {
         ctx.moveTo(x, y);
       } else {
-        const prev =
-          seq[idx - 1];
+        const pxv = px(
+          NODES[
+            seq[idx - 1]
+          ].x,
+        );
 
-        const pxv =
-          px(NODES[prev].x);
-
-        const pyv =
-          py(NODES[prev].y);
+        const pyv = py(
+          NODES[
+            seq[idx - 1]
+          ].y,
+        );
 
         ctx.quadraticCurveTo(
           (pxv + x) / 2 + 30,
@@ -620,12 +648,20 @@ function drawFrame(
     ctx.save();
 
     if (alert) {
-      ctx.fillStyle = '#ef4444';
-      ctx.shadowColor = '#ef4444';
+      ctx.fillStyle =
+        '#ef4444';
+
+      ctx.shadowColor =
+        '#ef4444';
+
       ctx.shadowBlur = 18;
     } else if (isHub) {
-      ctx.fillStyle = '#22d3ee';
-      ctx.shadowColor = '#22d3ee';
+      ctx.fillStyle =
+        '#22d3ee';
+
+      ctx.shadowColor =
+        '#22d3ee';
+
       ctx.shadowBlur = 18;
     } else {
       ctx.fillStyle =
@@ -672,7 +708,7 @@ function drawFrame(
     ctx.restore();
   });
 
-  // Sweep
+  // Scanner sweep
   const sweepX =
     mapX +
     ((frame * 7) %
@@ -706,7 +742,7 @@ function drawFrame(
     mapH + 48,
   );
 
-  // HUD
+  // HUD bars
   const hudX = W * 0.06;
   const hudW = W * 0.30;
 
@@ -729,10 +765,8 @@ function drawFrame(
                     38) *
                     0.34
                 : 0.94,
-
         c: '#22d3ee',
       },
-
       {
         v:
           frame < 34
@@ -748,10 +782,8 @@ function drawFrame(
                     42) *
                     0.5
                 : 0.14,
-
         c: '#f87171',
       },
-
       {
         v:
           frame < 66
@@ -762,52 +794,53 @@ function drawFrame(
               ((frame - 66) /
                 83) *
                 0.24,
-
         c: '#34d399',
       },
     ];
 
-    metrics.forEach((m, mi) => {
-      const by =
-        H * 0.70 +
-        mi * 34;
+    metrics.forEach(
+      (m, mi) => {
+        const by =
+          H * 0.70 +
+          mi * 34;
 
-      ctx.fillStyle =
-        'rgba(30,41,59,0.9)';
+        ctx.fillStyle =
+          'rgba(30,41,59,0.9)';
 
-      roundRect(
-        ctx,
-        hudX + 52,
-        by - 8,
-        hudW - 100,
-        12,
-        6,
-      );
+        roundRect(
+          ctx,
+          hudX + 52,
+          by - 8,
+          hudW - 100,
+          12,
+          6,
+        );
 
-      ctx.fill();
+        ctx.fill();
 
-      ctx.fillStyle = m.c;
+        ctx.fillStyle = m.c;
 
-      ctx.shadowColor = m.c;
-      ctx.shadowBlur = 8;
+        ctx.shadowColor = m.c;
+        ctx.shadowBlur = 8;
 
-      roundRect(
-        ctx,
-        hudX + 52,
-        by - 8,
-        (hudW - 100) *
-          Math.max(
-            0.04,
-            Math.min(1, m.v),
-          ),
-        12,
-        6,
-      );
+        roundRect(
+          ctx,
+          hudX + 52,
+          by - 8,
+          (hudW - 100) *
+            Math.max(
+              0.04,
+              Math.min(1, m.v),
+            ),
+          12,
+          6,
+        );
 
-      ctx.fill();
+        ctx.fill();
 
-      ctx.shadowBlur = 0;
-    });
+        ctx.shadowBlur = 0;
+      },
+    );
 
     ctx.restore();
   }
@@ -834,11 +867,16 @@ function drawFrame(
   );
 
   ctx.fillStyle = vig;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(
+    0,
+    0,
+    W,
+    H,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN COMPONENT
+// COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ScrollSequence() {
@@ -848,55 +886,73 @@ export default function ScrollSequence() {
   const canvasRef =
     useRef<HTMLCanvasElement>(null);
 
-  // Current desired frame.
+  // Current requested frame.
+  // This is deliberately NOT React state because changing React state on
+  // every scroll event causes unnecessary component re-renders.
   const frameRef =
     useRef(1);
 
-  // Last frame actually rendered.
+  // Last frame actually drawn.
   const renderedFrameRef =
     useRef(0);
 
-  // Prevent multiple RAF callbacks.
-  const rafRef =
-    useRef<number | null>(null);
-
-  // Cache of decoded images.
+  // Decoded image cache.
   const cacheRef =
-    useRef<Map<number, HTMLImageElement>>(
-      new Map(),
-    );
-
-  // Frames currently being downloaded.
-  const loadingRef =
-    useRef<Map<
-      number,
-      Promise<HTMLImageElement | null>
-    >>(new Map());
+    useRef<
+      Map<number, HTMLImageElement>
+    >(new Map());
 
   // Frames that definitely don't exist.
   const failedRef =
-    useRef<Set<number>>(new Set());
+    useRef<Set<number>>(
+      new Set(),
+    );
 
-  // Prevent multiple resize calculations.
+  // Prevent duplicate network requests.
+  const loadingRef =
+    useRef<
+      Map<
+        number,
+        Promise<HTMLImageElement | null>
+      >
+    >(new Map());
+
+  // Canvas rendering RAF.
+  const rafRef =
+    useRef<number | null>(null);
+
+  // Resize RAF.
   const resizeRafRef =
     useRef<number | null>(null);
 
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   // LOAD ONE FRAME
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
 
   const loadFrame = useCallback(
-    (n: number): Promise<HTMLImageElement | null> => {
-      n = Math.max(
-        1,
-        Math.min(TOTAL_FRAMES, n),
-      );
+    (
+      n: number,
+    ): Promise<HTMLImageElement | null> => {
+      if (
+        n < 1 ||
+        n > TOTAL_FRAMES
+      ) {
+        return Promise.resolve(null);
+      }
 
       const cached =
         cacheRef.current.get(n);
 
       if (cached) {
-        return Promise.resolve(cached);
+        return Promise.resolve(
+          cached,
+        );
+      }
+
+      if (
+        failedRef.current.has(n)
+      ) {
+        return Promise.resolve(null);
       }
 
       const existing =
@@ -906,191 +962,235 @@ export default function ScrollSequence() {
         return existing;
       }
 
-      if (failedRef.current.has(n)) {
-        return Promise.resolve(null);
-      }
-
       const promise =
-        new Promise<HTMLImageElement | null>(
-          (resolve) => {
-            let extensionIndex = 0;
+        new Promise<
+          HTMLImageElement | null
+        >((resolve) => {
+          let extensionIndex = 0;
 
-            const attempt = () => {
+          const attempt =
+            () => {
               if (
                 extensionIndex >=
-                FRAME_CONFIG.extensions.length
+                FRAME_CONFIG
+                  .extensions
+                  .length
               ) {
-                failedRef.current.add(n);
+                failedRef.current.add(
+                  n,
+                );
+
                 resolve(null);
                 return;
               }
 
-              const ext =
-                FRAME_CONFIG.extensions[
+              const extension =
+                FRAME_CONFIG
+                  .extensions[
                   extensionIndex
                 ];
 
               const img =
                 new Image();
 
-              img.decoding = 'async';
+              // Tell the browser that these images are intended for
+              // asynchronous decoding.
+              img.decoding =
+                'async';
 
-              img.onload = async () => {
-                // Ask the browser to decode the image
-                // before we try to draw it.
-                try {
-                  if (
-                    typeof img.decode ===
-                    'function'
-                  ) {
-                    await img.decode();
+              img.onload =
+                async () => {
+                  try {
+                    // Decode before putting the image in the cache.
+                    // This avoids a decode hitch when drawImage() happens.
+                    if (
+                      typeof img.decode ===
+                      'function'
+                    ) {
+                      try {
+                        await img.decode();
+                      } catch {
+                        // Some browsers can throw even though the image
+                        // loaded correctly. drawImage can still use it.
+                      }
+                    }
+
+                    cacheRef.current.set(
+                      n,
+                      img,
+                    );
+
+                    failedRef.current.delete(
+                      n,
+                    );
+
+                    resolve(img);
+                  } catch {
+                    resolve(img);
                   }
-                } catch {
-                  // Some browsers can still draw
-                  // successfully even if decode()
-                  // rejects.
-                }
+                };
 
-                cacheRef.current.set(
+              img.onerror =
+                () => {
+                  extensionIndex += 1;
+                  attempt();
+                };
+
+              img.src =
+                frameUrl(
                   n,
-                  img,
+                  extension,
                 );
-
-                loadingRef.current.delete(
-                  n,
-                );
-
-                resolve(img);
-              };
-
-              img.onerror = () => {
-                extensionIndex += 1;
-                attempt();
-              };
-
-              img.src = frameUrl(n, ext);
             };
 
-            attempt();
-          },
-        );
+          attempt();
+        });
 
       loadingRef.current.set(
         n,
         promise,
       );
 
+      promise.finally(() => {
+        loadingRef.current.delete(
+          n,
+        );
+      });
+
       return promise;
     },
     [],
   );
 
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   // FIND BEST AVAILABLE FRAME
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
 
   const getBestAvailableFrame =
-    useCallback((target: number) => {
-      const exact =
-        cacheRef.current.get(
-          target,
-        );
+    useCallback(
+      (
+        target: number,
+      ): HTMLImageElement | null => {
+        const exact =
+          cacheRef.current.get(
+            target,
+          );
 
-      if (exact) {
-        return exact;
-      }
-
-      // Search outward from the requested frame.
-      // Usually the nearest frame is only a few
-      // frames away because of the preload system.
-      for (
-        let distance = 1;
-        distance <= TOTAL_FRAMES;
-        distance++
-      ) {
-        const before =
-          target - distance;
-
-        if (
-          before >= 1
-        ) {
-          const img =
-            cacheRef.current.get(
-              before,
-            );
-
-          if (img) return img;
+        if (exact) {
+          return exact;
         }
 
-        const after =
-          target + distance;
-
-        if (
-          after <= TOTAL_FRAMES
+        // Search outward from the requested frame.
+        // This is much cheaper than searching from frame 1 every time.
+        for (
+          let distance = 1;
+          distance < TOTAL_FRAMES;
+          distance++
         ) {
-          const img =
-            cacheRef.current.get(
-              after,
-            );
+          const before =
+            target - distance;
 
-          if (img) return img;
+          if (
+            before >= 1
+          ) {
+            const img =
+              cacheRef.current.get(
+                before,
+              );
+
+            if (img) {
+              return img;
+            }
+          }
+
+          const after =
+            target + distance;
+
+          if (
+            after <=
+            TOTAL_FRAMES
+          ) {
+            const img =
+              cacheRef.current.get(
+                after,
+              );
+
+            if (img) {
+              return img;
+            }
+          }
         }
-      }
 
-      return null;
-    }, []);
+        return null;
+      },
+      [],
+    );
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // CANVAS SIZE
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // RESIZE CANVAS
+  // ─────────────────────────────────────────────────────────────────────────
 
   const resizeCanvas =
     useCallback(() => {
       const canvas =
         canvasRef.current;
 
-      if (!canvas) return;
+      if (!canvas) {
+        return;
+      }
 
       const rect =
         canvas.getBoundingClientRect();
 
-      const dpr = Math.min(
-        2,
-        window.devicePixelRatio || 1,
-      );
-
       const W =
-        Math.max(320, rect.width);
+        Math.max(
+          320,
+          rect.width,
+        );
 
       const H =
-        Math.max(320, rect.height);
+        Math.max(
+          320,
+          rect.height,
+        );
+
+      // Limit DPR to 2.
+      // Higher DPR values provide little visual benefit here but can
+      // dramatically increase canvas rendering cost on mobile devices.
+      const dpr =
+        Math.min(
+          2,
+          window.devicePixelRatio ||
+            1,
+        );
 
       const targetWidth =
-        Math.round(W * dpr);
+        Math.round(
+          W * dpr,
+        );
 
       const targetHeight =
-        Math.round(H * dpr);
+        Math.round(
+          H * dpr,
+        );
 
       if (
         canvas.width !==
-        targetWidth
-      ) {
-        canvas.width =
-          targetWidth;
-      }
-
-      if (
+        targetWidth ||
         canvas.height !==
         targetHeight
       ) {
+        canvas.width =
+          targetWidth;
+
         canvas.height =
           targetHeight;
       }
     }, []);
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // DRAW
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // DRAW CURRENT FRAME
+  // ─────────────────────────────────────────────────────────────────────────
 
   const drawCurrentFrame =
     useCallback(() => {
@@ -1099,54 +1199,9 @@ export default function ScrollSequence() {
       const canvas =
         canvasRef.current;
 
-      if (!canvas) return;
-
-      const ctx =
-        canvas.getContext('2d');
-
-      if (!ctx) return;
-
-      const rect =
-        canvas.getBoundingClientRect();
-
-      const dpr = Math.min(
-        2,
-        window.devicePixelRatio || 1,
-      );
-
-      const W =
-        Math.max(320, rect.width);
-
-      const H =
-        Math.max(320, rect.height);
-
-      const requiredWidth =
-        Math.round(W * dpr);
-
-      const requiredHeight =
-        Math.round(H * dpr);
-
-      if (
-        canvas.width !==
-          requiredWidth ||
-        canvas.height !==
-          requiredHeight
-      ) {
-        canvas.width =
-          requiredWidth;
-
-        canvas.height =
-          requiredHeight;
+      if (!canvas) {
+        return;
       }
-
-      ctx.setTransform(
-        dpr,
-        0,
-        0,
-        dpr,
-        0,
-        0,
-      );
 
       const frame =
         frameRef.current;
@@ -1158,6 +1213,46 @@ export default function ScrollSequence() {
       ) {
         return;
       }
+
+      resizeCanvas();
+
+      const ctx =
+        canvas.getContext('2d');
+
+      if (!ctx) {
+        return;
+      }
+
+      const rect =
+        canvas.getBoundingClientRect();
+
+      const W =
+        Math.max(
+          320,
+          rect.width,
+        );
+
+      const H =
+        Math.max(
+          320,
+          rect.height,
+        );
+
+      const dpr =
+        Math.min(
+          2,
+          window.devicePixelRatio ||
+            1,
+        );
+
+      ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0,
+      );
 
       const img =
         getBestAvailableFrame(
@@ -1172,8 +1267,7 @@ export default function ScrollSequence() {
           H,
         );
       } else {
-        // Temporary fallback while images
-        // are downloading/decoding.
+        // Keep the original procedural fallback.
         drawFrame(
           ctx,
           W,
@@ -1186,11 +1280,12 @@ export default function ScrollSequence() {
         frame;
     }, [
       getBestAvailableFrame,
+      resizeCanvas,
     ]);
 
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   // REQUEST DRAW
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
 
   const requestDraw =
     useCallback(() => {
@@ -1204,132 +1299,132 @@ export default function ScrollSequence() {
         requestAnimationFrame(
           drawCurrentFrame,
         );
-    }, [drawCurrentFrame]);
+    }, [
+      drawCurrentFrame,
+    ]);
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // INTELLIGENT PRELOADING
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // PRELOAD AROUND CURRENT FRAME
+  // ─────────────────────────────────────────────────────────────────────────
 
   const preloadAround =
     useCallback(
-      (center: number) => {
+      (
+        center: number,
+      ) => {
         const priority: number[] =
           [];
 
-        // Exact frame first.
-        priority.push(center);
+        // Always load the exact frame first.
+        priority.push(
+          center,
+        );
 
-        // Load frames around the current
-        // position in both directions.
-        //
-        // This is much better than your old
-        // 1 → 149 sequential loading because
-        // the user may immediately scroll to
-        // frame 80.
+        // Then nearby frames.
         for (
-          let distance = 1;
-          distance <= 12;
-          distance++
+          let d = 1;
+          d <= 12;
+          d++
         ) {
           if (
-            center - distance >=
+            center - d >=
             1
           ) {
             priority.push(
-              center - distance,
+              center - d,
             );
           }
 
           if (
-            center + distance <=
+            center + d <=
             TOTAL_FRAMES
           ) {
             priority.push(
-              center + distance,
+              center + d,
             );
           }
         }
 
-        // Then slowly expand the loading window.
+        // Then a wider buffer.
         for (
-          let distance = 13;
-          distance <= 30;
-          distance++
+          let d = 13;
+          d <= 30;
+          d++
         ) {
           if (
-            center - distance >=
+            center - d >=
             1
           ) {
             priority.push(
-              center - distance,
+              center - d,
             );
           }
 
           if (
-            center + distance <=
+            center + d <=
             TOTAL_FRAMES
           ) {
             priority.push(
-              center + distance,
+              center + d,
             );
           }
         }
 
-        // Deduplicate.
+        // Remove duplicates.
         const unique =
           Array.from(
             new Set(priority),
           );
 
-        // Small concurrency limit.
-        // Too many simultaneous image
-        // requests can actually make things
-        // slower on mobile.
+        // Limit simultaneous downloads.
         const CONCURRENCY = 6;
 
         let index = 0;
 
-        const worker = async () => {
-          while (
-            index <
-            unique.length
-          ) {
-            const currentIndex =
-              index++;
-
-            const frame =
-              unique[currentIndex];
-
-            if (
-              cacheRef.current.has(
-                frame,
-              ) ||
-              failedRef.current.has(
-                frame,
-              )
+        const worker =
+          async () => {
+            while (
+              index <
+              unique.length
             ) {
-              continue;
-            }
+              const current =
+                index++;
 
-            await loadFrame(frame);
+              const frameNumber =
+                unique[
+                  current
+                ];
 
-            // If this was the frame the user
-            // actually wants, draw immediately.
-            if (
-              frame ===
-              frameRef.current
-            ) {
-              requestDraw();
+              if (
+                !cacheRef.current.has(
+                  frameNumber,
+                ) &&
+                !failedRef.current.has(
+                  frameNumber,
+                )
+              ) {
+                await loadFrame(
+                  frameNumber,
+                );
+
+                // If the frame we just loaded is the frame currently being
+                // displayed, immediately schedule a new canvas draw.
+                if (
+                  frameRef.current ===
+                  frameNumber
+                ) {
+                  requestDraw();
+                }
+              }
             }
-          }
-        };
+          };
 
         for (
           let i = 0;
           i < CONCURRENCY;
           i++
         ) {
-          worker();
+          void worker();
         }
       },
       [
@@ -1338,17 +1433,16 @@ export default function ScrollSequence() {
       ],
     );
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // INITIAL FRAME LOADING
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // INITIAL LOAD
+  // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     let cancelled = false;
 
-    const start =
+    const initialize =
       async () => {
-        // Immediately load the first,
-        // middle and final frame.
+        // Load first / middle / last immediately.
         const probes =
           await Promise.all([
             loadFrame(1),
@@ -1366,74 +1460,80 @@ export default function ScrollSequence() {
           return;
         }
 
-        // Draw the first available frame
-        // immediately.
-        if (
-          probes.some(Boolean)
-        ) {
-          requestDraw();
-        }
+        // Draw immediately.
+        renderedFrameRef.current =
+          0;
 
-        // Then prioritize the current
-        // viewport position.
+        requestDraw();
+
+        // Start loading around the initial frame.
         preloadAround(
           frameRef.current,
         );
 
-        // Finally continue filling the
-        // remaining frames in the background.
+        // Background loading of the entire sequence.
         //
-        // We intentionally do this slowly so
-        // scrolling remains responsive.
-        let nextBackground =
-          1;
-
-        const backgroundWorker =
+        // This is intentionally lower priority than the frames around the
+        // user's current scroll position.
+        const backgroundLoad =
           async () => {
-            while (
-              !cancelled &&
-              nextBackground <=
-                TOTAL_FRAMES
+            const BATCH_SIZE = 3;
+
+            for (
+              let start = 1;
+              start <=
+              TOTAL_FRAMES;
+              start +=
+                BATCH_SIZE
             ) {
+              if (
+                cancelled
+              ) {
+                return;
+              }
+
               const batch: number[] =
                 [];
 
               for (
                 let i = 0;
-                i < 3 &&
-                nextBackground <=
-                  TOTAL_FRAMES;
+                i < BATCH_SIZE;
                 i++
               ) {
-                const f =
-                  nextBackground++;
+                const n =
+                  start + i;
+
+                if (
+                  n >
+                  TOTAL_FRAMES
+                ) {
+                  break;
+                }
 
                 if (
                   !cacheRef.current.has(
-                    f,
+                    n,
                   ) &&
                   !failedRef.current.has(
-                    f,
+                    n,
                   )
                 ) {
-                  batch.push(f);
+                  batch.push(n);
                 }
               }
 
               if (
-                batch.length === 0
+                batch.length > 0
               ) {
-                continue;
+                await Promise.all(
+                  batch.map(
+                    (n) =>
+                      loadFrame(n),
+                  ),
+                );
               }
 
-              await Promise.all(
-                batch.map((f) =>
-                  loadFrame(f),
-                ),
-              );
-
-              // Give the browser some breathing
-              // room between background batches.
+              // Small breathing room so the browser remains responsive.
               await new Promise(
                 (resolve) =>
                   setTimeout(
@@ -1444,10 +1544,10 @@ export default function ScrollSequence() {
             }
           };
 
-        backgroundWorker();
+        void backgroundLoad();
       };
 
-    start();
+    void initialize();
 
     return () => {
       cancelled = true;
@@ -1458,13 +1558,14 @@ export default function ScrollSequence() {
     requestDraw,
   ]);
 
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   // SCROLL HANDLING
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    let scrollRaf: number | null =
-      null;
+    let scrollRaf:
+      | number
+      | null = null;
 
     const updateFromScroll =
       () => {
@@ -1473,7 +1574,9 @@ export default function ScrollSequence() {
         const wrapper =
           wrapRef.current;
 
-        if (!wrapper) return;
+        if (!wrapper) {
+          return;
+        }
 
         const rect =
           wrapper.getBoundingClientRect();
@@ -1496,7 +1599,7 @@ export default function ScrollSequence() {
             ? scrolled / total
             : 0;
 
-        const nextFrame =
+        const newFrame =
           Math.min(
             TOTAL_FRAMES,
             Math.max(
@@ -1510,24 +1613,22 @@ export default function ScrollSequence() {
             ),
           );
 
-        const previousFrame =
-          frameRef.current;
-
-        frameRef.current =
-          nextFrame;
-
-        // Only do extra preload work when
-        // the requested frame actually changes.
+        // Only do work when the frame actually changes.
         if (
-          previousFrame !==
-          nextFrame
+          frameRef.current !==
+          newFrame
         ) {
-          preloadAround(
-            nextFrame,
-          );
-        }
+          frameRef.current =
+            newFrame;
 
-        requestDraw();
+          // Start loading the frames around the user's current position.
+          preloadAround(
+            newFrame,
+          );
+
+          // Draw during the next browser paint.
+          requestDraw();
+        }
       };
 
     const onScroll =
@@ -1574,16 +1675,11 @@ export default function ScrollSequence() {
     requestDraw,
   ]);
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // RESIZE
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // RESIZE HANDLING
+  // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    const canvas =
-      canvasRef.current;
-
-    if (!canvas) return;
-
     const handleResize =
       () => {
         if (
@@ -1599,12 +1695,10 @@ export default function ScrollSequence() {
               resizeRafRef.current =
                 null;
 
-              resizeCanvas();
-
-              // Force redraw after resize.
               renderedFrameRef.current =
                 0;
 
+              resizeCanvas();
               requestDraw();
             },
           );
@@ -1613,17 +1707,32 @@ export default function ScrollSequence() {
     window.addEventListener(
       'resize',
       handleResize,
+      {
+        passive: true,
+      },
     );
 
-    const observer =
-      new ResizeObserver(
-        handleResize,
-      );
+    let observer:
+      | ResizeObserver
+      | null = null;
 
-    observer.observe(canvas);
+    if (
+      typeof ResizeObserver !==
+      'undefined'
+    ) {
+      observer =
+        new ResizeObserver(
+          handleResize,
+        );
 
-    resizeCanvas();
-    requestDraw();
+      if (
+        canvasRef.current
+      ) {
+        observer.observe(
+          canvasRef.current,
+        );
+      }
+    }
 
     return () => {
       window.removeEventListener(
@@ -1631,7 +1740,9 @@ export default function ScrollSequence() {
         handleResize,
       );
 
-      observer.disconnect();
+      if (observer) {
+        observer.disconnect();
+      }
 
       if (
         resizeRafRef.current !==
@@ -1640,6 +1751,9 @@ export default function ScrollSequence() {
         cancelAnimationFrame(
           resizeRafRef.current,
         );
+
+        resizeRafRef.current =
+          null;
       }
     };
   }, [
@@ -1647,9 +1761,9 @@ export default function ScrollSequence() {
     requestDraw,
   ]);
 
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   // CLEANUP
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     return () => {
@@ -1659,13 +1773,15 @@ export default function ScrollSequence() {
         cancelAnimationFrame(
           rafRef.current,
         );
+
+        rafRef.current = null;
       }
     };
   }, []);
 
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   // JSX
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div
